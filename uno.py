@@ -1,7 +1,7 @@
 import random
 
-types = ["Number", "Skip", "Reverse", "Draw_Two",
-         "Wild", "Wild_Draw_Four"]
+types = ["number", "skip", "reverse", "draw_Two",
+         "wild", "wild_draw_four"]
 colors = ["red", "yellow", "green", "blue"]
 players = []
 
@@ -11,6 +11,7 @@ class Card():
     def __init__(self):
         self.type = self.set_type()
         self.color = self.set_color()
+        self.number = None
 
     def set_type(self):
         random_type = random.randint(1, 28)
@@ -32,40 +33,49 @@ class Card():
     def set_color(self):
         return colors[random.randint(0,3)]
 
+    def show_info(self):
+        print(self.type, ", ", self.color, ", ", self.number)
+
+    @classmethod
+    def get_top_card(cls):
+        top_card = Card()
+        return top_card
 
 # PLAYER CLASSES
-class Players():
+class Player():
 
     def __init__(self):
         self.cards = []
+        self.received_card = None
 
         players.append(self)
 
     def draw_card(self):
         drawn_card = Card()
         self.cards.append(drawn_card)
-        print(drawn_card.type)
 
-    def receive_skip(self):
-        pass
+    def check_card(self, card):
+        card.show_info()
 
-    def receive_draw_two(self):
-        pass
-        # self.receive_skip()
+    def is_first_player(self, index):
+        if index == 0:
+            return True
+        else:
+            return False
 
-    def receive_wild_draw_four(self):
-        pass
-        # self.receive_skip()
+    def is_last_player(self, index):
+        if index == len(players) - 1:
+            return True
+        else:
+            return False
 
-class Robot_Player(Players):
+class Robot_Player(Player):
 
     def __init__(self, name):
         super().__init__()
         self.name = name
 
-        players.append(self)
-
-class Real_Player(Players):
+class Real_Player(Player):
 
     def __init__(self):
         super().__init__()
@@ -75,13 +85,14 @@ class Real_Player(Players):
 
 # Create Players
 player_one = Real_Player()
-player_two = Robot_Player("JACK")
-player_three = Robot_Player("RABBIT")
+player_two = Robot_Player("RABBIT")
+player_three = Robot_Player("DURANTULA")
+player_four = Robot_Player("THE MAN")
 
 # Set Up Game (order of turns, game over status, top card of discard pile)
-game_rotation = "clockwise"
+game_rotation = "counterclockwise"
 game_over = False
-top_card = player_one.draw_card()
+top_card = Card.get_top_card()
 
 # Deal Cards
 for player in players:
@@ -89,9 +100,28 @@ for player in players:
         player.draw_card()
 
 # Start Game
+players_index = 0
+
+while game_over == False:
 
     # Start Current Player's Turn
+    current_player = players[players_index]
+    current_player.check_card(top_card)
 
     # Check If Current Player Is Winner
+    if len(current_player.cards) == 0:
+        print(current_player.name, " is the winner!")
+        game_over = True
 
     # Next Turn
+    if game_rotation == "clockwise":
+        if current_player.is_last_player(players_index):
+            players_index = 0
+        else:
+            players_index = players_index + 1
+    else:
+        if current_player.is_first_player(players_index):
+            players_index = len(players) - 1
+        else:
+            players_index = players_index - 1
+
