@@ -1,7 +1,5 @@
 import random
 
-types = ["number", "skip", "reverse", "draw_Two",
-         "wild", "wild_draw_four"]
 colors = ["red", "yellow", "green", "blue"]
 players = []
 
@@ -9,37 +7,102 @@ players = []
 class Card():
 
     def __init__(self):
-        self.type = self.set_type()
-        self.color = self.set_color()
-        self.number = None
-
-    def set_type(self):
-        random_type = random.randint(1, 28)
-        types_index = 0
-
-        if random_type == 21 or random_type == 22:
-            types_index = 1
-        elif random_type == 23 or random_type == 24:
-            types_index = 2
-        elif random_type == 25 or random_type == 26:
-            types_index = 3
-        elif random_type == 27:
-            types_index = 4
-        elif random_type == 28:
-            types_index = 5
-
-        return types[types_index]
+        self.type = "no type"
+        self.color = "no color"
+        self.number = "no number"
 
     def set_color(self):
         return colors[random.randint(0,3)]
 
     def show_info(self):
-        print(self.type, ", ", self.color, ", ", self.number)
+        print(self.type, ",", self.color, ",", self.number)
 
     @classmethod
-    def get_top_card(cls):
-        top_card = Card()
-        return top_card
+    def generate_card(cls):
+        card = Number_Card()
+        random_type = random.randint(1, 28)
+
+        if random_type == 21 or random_type == 22:
+            card = Skip_Card()
+        elif random_type == 23 or random_type == 24:
+            card = Reverse_Card()
+        elif random_type == 25 or random_type == 26:
+            card = Draw_Two_Card()
+        elif random_type == 27:
+            card = Wild_Card()
+        elif random_type == 28:
+            card = WD4_Card()
+
+        return card
+
+class Number_Card(Card):
+
+    def __init__(self):
+        super().__init__()
+        self.type = "number"
+        self.color = self.set_color()
+        self.number = self.set_number()
+
+    def set_number(self):
+        return random.randint(0, 9)
+
+class Skip_Card(Card):
+
+    def __init__(self):
+        super().__init__()
+        self.type = "skip"
+        self.color = self.set_color()
+
+    def take_effect(self, player):
+        player.is_skipped = True
+
+class Reverse_Card(Card):
+
+    def __init__(self):
+        super().__init__()
+        self.type = "reverse"
+        self.color = self.set_color()
+
+class Draw_Two_Card(Card):
+
+    def __init__(self):
+        super().__init__()
+        self.type = "draw two"
+        self.color = self.set_color()
+
+    def take_effect(self, player):
+        player.draw_card()
+        player.draw_card()
+
+class Wild_Card(Card):
+
+    def __init__(self):
+        super().__init__()
+        self.type = "wild"
+
+    def set_color(self):
+        print("The colors are red, yellow, green, and blue.")
+        print("What color will your wild card be?")
+        color = input("(r/y/g/b: ")
+
+        return color
+
+class WD4_Card(Card):
+
+    def __init__(self):
+        super().__init__()
+        self.type = "wild draw four"
+
+    def set_color(self):
+        print("The colors are red, yellow, green, and blue.")
+        print("What color will your wild card be?")
+        color = input("(r/y/g/b: ")
+
+        return color
+
+    def take_effect(self, player):
+        for num in range(1, 4):
+            player.draw_card()
 
 # PLAYER CLASSES
 class Player():
@@ -47,12 +110,13 @@ class Player():
     def __init__(self):
         self.cards = []
         self.received_card = None
+        self.is_skipped = False
 
         players.append(self)
 
     def draw_card(self):
-        drawn_card = Card()
-        self.cards.append(drawn_card)
+        card = Card.generate_card()
+        self.cards.append(card)
 
     def check_card(self, card):
         card.show_info()
@@ -92,7 +156,7 @@ player_four = Robot_Player("THE MAN")
 # Set Up Game (order of turns, game over status, top card of discard pile)
 game_rotation = "counterclockwise"
 game_over = False
-top_card = Card.get_top_card()
+top_card = Card.generate_card()
 
 # Deal Cards
 for player in players:
@@ -107,6 +171,28 @@ while game_over == False:
     # Start Current Player's Turn
     current_player = players[players_index]
     current_player.check_card(top_card)
+
+    for card in current_player.cards:
+        current_player.check_card(card)
+
+    if isinstance(current_player.received_card, Skip_Card):
+        current_player.received_card.take_effect(current_player)
+    elif isinstance(current_player.received_card, Draw_Two_Card):
+        current_player.received_card.take_effect(current_player)
+    elif isinstance(current_player.received_card, WD4_Card):
+        current_player.received_card.take_effect(current_player)
+
+    # if not current_player.is_skipped:
+        # choose_card = input("Play a card? (y/n): ")
+
+        # if choose_card is yes:
+        #   chosen_card = current_player.pick_card()
+        #   ^ make sure it checks for eligibility, if not draw card
+        #   top_card = chosen_card
+        # else if no:
+        #   current_player.draw_card()
+        #
+        # current_player.is_skipped = False
 
     # Check If Current Player Is Winner
     if len(current_player.cards) == 0:
