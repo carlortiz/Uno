@@ -3,19 +3,39 @@ import random
 colors = ["red", "yellow", "green", "blue"]
 players = []
 
-# CARD CLASS
-class Card():
 
+# CARD CLASS
+class Card:
     def __init__(self):
         self.type = "no type"
         self.color = "no color"
         self.number = "no number"
 
     def set_color(self):
-        return colors[random.randint(0,3)]
+        return colors[random.randint(0, 3)]
 
     def show_info(self):
         print(self.type, ",", self.color, ",", self.number)
+
+    def is_effect_card(self):
+        if isinstance(self, Skip_Card):
+            return True
+        elif isinstance(self, Draw_Two_Card):
+            return True
+        elif isinstance(self, WD4_Card):
+            return True
+
+        return False
+
+    def is_eligible(self, card):
+
+        if isinstance(self, Wild_Card) or isinstance(self, WD4_Card):
+            return True
+
+        if self.color == card.color and isinstance(self, Wild_Card):
+            return True
+        elif self.color == card.color and isinstance(self, WD4_Card):
+            return True
 
     @classmethod
     def generate_card(cls):
@@ -35,6 +55,7 @@ class Card():
 
         return card
 
+
 class Number_Card(Card):
 
     def __init__(self):
@@ -46,6 +67,7 @@ class Number_Card(Card):
     def set_number(self):
         return random.randint(0, 9)
 
+
 class Skip_Card(Card):
 
     def __init__(self):
@@ -56,12 +78,14 @@ class Skip_Card(Card):
     def take_effect(self, player):
         player.is_skipped = True
 
+
 class Reverse_Card(Card):
 
     def __init__(self):
         super().__init__()
         self.type = "reverse"
         self.color = self.set_color()
+
 
 class Draw_Two_Card(Card):
 
@@ -73,6 +97,7 @@ class Draw_Two_Card(Card):
     def take_effect(self, player):
         player.draw_card()
         player.draw_card()
+
 
 class Wild_Card(Card):
 
@@ -86,6 +111,7 @@ class Wild_Card(Card):
         color = input("(r/y/g/b: ")
 
         return color
+
 
 class WD4_Card(Card):
 
@@ -104,8 +130,9 @@ class WD4_Card(Card):
         for num in range(1, 4):
             player.draw_card()
 
+
 # PLAYER CLASSES
-class Player():
+class Player:
 
     def __init__(self):
         self.cards = []
@@ -121,6 +148,13 @@ class Player():
     def check_card(self, card):
         card.show_info()
 
+    def pick_card(self):
+        print("Enter the placement number of your chosen card.")
+        print("Ex: First card is '1")
+        card_choice = int(input("(1, 2, 3...): "))
+
+        return self.cards[card_choice + 1]
+
     def is_first_player(self, index):
         if index == 0:
             return True
@@ -133,17 +167,20 @@ class Player():
         else:
             return False
 
+
 class Robot_Player(Player):
 
     def __init__(self, name):
         super().__init__()
         self.name = name
 
+
 class Real_Player(Player):
 
     def __init__(self):
         super().__init__()
         self.name = input("Your Name: ").upper()
+
 
 # GAME STARTS HERE
 
@@ -175,24 +212,22 @@ while game_over == False:
     for card in current_player.cards:
         current_player.check_card(card)
 
-    if isinstance(current_player.received_card, Skip_Card):
-        current_player.received_card.take_effect(current_player)
-    elif isinstance(current_player.received_card, Draw_Two_Card):
-        current_player.received_card.take_effect(current_player)
-    elif isinstance(current_player.received_card, WD4_Card):
-        current_player.received_card.take_effect(current_player)
+    if current_player.received_card.is_effect_card():
+        current_player.received_card.take_effect()
 
-    # if not current_player.is_skipped:
-        # choose_card = input("Play a card? (y/n): ")
+    if current_player.is_skipped == False:
+        will_choose_card = input("Play a card? (y/n): ")
+    else:
+        will_choose_card = "n"
 
-        # if choose_card is yes:
-        #   chosen_card = current_player.pick_card()
-        #   ^ make sure it checks for eligibility, if not draw card
-        #   top_card = chosen_card
-        # else if no:
-        #   current_player.draw_card()
-        #
-        # current_player.is_skipped = False
+    if will_choose_card == "y":
+        chosen_card = current_player.pick_card()
+        if chosen_card.is_eligible(top_card):
+            top_card = chosen_card
+    elif will_choose_card == "n":
+        current_player.draw_card()
+
+    current_player.is_skipped = False
 
     # Check If Current Player Is Winner
     if len(current_player.cards) == 0:
@@ -210,4 +245,3 @@ while game_over == False:
             players_index = len(players) - 1
         else:
             players_index = players_index - 1
-
