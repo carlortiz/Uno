@@ -183,12 +183,12 @@ class RealPlayer(Player):
 player_one = RealPlayer()
 player_two = RobotPlayer("RABBIT")
 player_three = RobotPlayer("DURANTULA")
-player_four = RobotPlayer("THE MAN")
+player_four = RobotPlayer("THE MANN")
 
 # Set Up Game (order of turns, game over status, top card of discard pile)
-game_rotation = "counterclockwise"
+game_rotation = "clockwise"
 game_over = False
-top_card = Card.generate_card()
+top_card = Number_Card()
 
 # Deal Cards
 for player in players:
@@ -202,24 +202,27 @@ while not game_over:
 
     # Start Current Player's Turn
     current_player = players[players_index]
-    print("*It is now", current_player.name, "'s turn.")
+    print("* It is now", current_player.name, "'s turn.")
 
-    print("*Now showing top card: ")
+    print("* Now showing top card: ")
     current_player.check_card(top_card)
 
-    print("*Now showing", current_player.name, "'s cards: ")
+    print("\n* Now showing", current_player.name, "'s cards: ")
     cards_index = 1
 
     for card in current_player.cards:
-        print("-card ", cards_index, "~", end = ' '),
+        print("- card ", cards_index, "~", end = ' '),
         current_player.check_card(card)
         cards_index += 1
 
-    if current_player.received_card and current_player.received_card.is_effect_card():
-        current_player.received_card.take_effect()
+    # Check if current player receives a draw two, draw four, or skip card
+    if current_player.received_card:
+        if current_player.received_card.is_effect_card():
+            current_player.received_card.take_effect()
 
+    # Check if player wants to play a card if not skipped
     if current_player.is_skipped is False:
-        will_choose_card = input("Play a card? (y/n): ")
+        will_choose_card = input("* Play a card? (y/n): ")
     else:
         will_choose_card = "n"
 
@@ -239,6 +242,10 @@ while not game_over:
         game_over = True
 
     # Next Turn
+    if isinstance(top_card, Reverse_Card):
+
+
+
     if game_rotation == "clockwise":
         if current_player.is_last_player(players_index):
             players_index = 0
@@ -249,3 +256,5 @@ while not game_over:
             players_index = len(players) - 1
         else:
             players_index = players_index - 1
+
+    print("\n")
