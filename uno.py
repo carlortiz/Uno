@@ -3,7 +3,6 @@ import random
 colors = ["red", "yellow", "green", "blue"]
 players = []
 
-# CARD CLASS
 class Card:
     def __init__(self):
         self.type = "no type"
@@ -17,25 +16,27 @@ class Card:
         print(self.type, ",", self.color, ",", self.number)
 
     def is_effect_card(self):
-        if isinstance(self, Skip_Card):
+        if isinstance(self, SkipCard):
             return True
-        elif isinstance(self, Draw_Two_Card):
+        elif isinstance(self, DrawTwoCard):
             return True
-        elif isinstance(self, WD4_Card):
+        elif isinstance(self, WildDrawFourCard):
+            return True
+        elif isinstance(self, WildCard):
             return True
 
         return False
 
     def is_eligible(self, card):
-        if isinstance(card, Wild_Card) or isinstance(card, WD4_Card):
+        if isinstance(card, WildCard) or isinstance(card, WildDrawFourCard):
             return True
 
-        if self.color == card.color and isinstance(self, Wild_Card):
+        if self.color == card.color and isinstance(self, WildCard):
             return True
-        elif self.color == card.color and isinstance(self, WD4_Card):
+        elif self.color == card.color and isinstance(self, WildDrawFourCard):
             return True
 
-        if isinstance(card, Number_Card) and isinstance(self, Number_Card):
+        if isinstance(card, NumberCard) and isinstance(self, NumberCard):
             if self.color == card.color or self.number == card.number:
                 return True
             else:
@@ -48,23 +49,23 @@ class Card:
 
     @classmethod
     def generate_card(cls):
-        card = Number_Card()
+        card = NumberCard()
         random_type = random.randint(1, 28)
 
         if random_type == 21 or random_type == 22:
-            card = Skip_Card()
+            card = SkipCard()
         elif random_type == 23 or random_type == 24:
-            card = Reverse_Card()
+            card = ReverseCard()
         elif random_type == 25 or random_type == 26:
-            card = Draw_Two_Card()
+            card = DrawTwoCard()
         elif random_type == 27:
-            card = Wild_Card()
+            card = WildCard()
         elif random_type == 28:
-            card = WD4_Card()
+            card = WildDrawFourCard()
 
         return card
 
-class Number_Card(Card):
+class NumberCard(Card):
 
     def __init__(self):
         super().__init__()
@@ -75,7 +76,7 @@ class Number_Card(Card):
     def set_number(self):
         return random.randint(0, 9)
 
-class Skip_Card(Card):
+class SkipCard(Card):
 
     def __init__(self):
         super().__init__()
@@ -85,14 +86,22 @@ class Skip_Card(Card):
     def take_effect(self, player):
         player.is_skipped = True
 
-class Reverse_Card(Card):
+class ReverseCard(Card):
 
     def __init__(self):
         super().__init__()
         self.type = "reverse"
         self.color = self.set_color()
 
-class Draw_Two_Card(Card):
+    def take_effect(self, current_rotation):
+        if current_rotation == "clockwise":
+            return "counterclockwise"
+        elif current_rotation == "counterclockwise":
+            return "clockwise"
+
+        return current_rotation
+
+class DrawTwoCard(Card):
 
     def __init__(self):
         super().__init__()
@@ -103,7 +112,7 @@ class Draw_Two_Card(Card):
         player.draw_card()
         player.draw_card()
 
-class Wild_Card(Card):
+class WildCard(Card):
 
     def __init__(self):
         super().__init__()
@@ -116,7 +125,10 @@ class Wild_Card(Card):
 
         return color
 
-class WD4_Card(Card):
+    def take_effect(self, player):
+        self.color = self.set_color()
+
+class WildDrawFourCard(Card):
 
     def __init__(self):
         super().__init__()
@@ -130,6 +142,7 @@ class WD4_Card(Card):
         return color
 
     def take_effect(self, player):
+        self.color = self.set_color()
         for num in range(1, 4):
             player.draw_card()
 
@@ -167,12 +180,6 @@ class Player:
         else:
             return False
 
-class RobotPlayer(Player):
-
-    def __init__(self, name):
-        super().__init__()
-        self.name = name
-
 class RealPlayer(Player):
 
     def __init__(self):
@@ -181,14 +188,14 @@ class RealPlayer(Player):
 
 # Create Players
 player_one = RealPlayer()
-player_two = RobotPlayer("RABBIT")
-player_three = RobotPlayer("DURANTULA")
-player_four = RobotPlayer("THE MANN")
+player_two = RealPlayer()
+player_three = RealPlayer()
+player_four = RealPlayer()
 
 # Set Up Game (order of turns, game over status, top card of discard pile)
 game_rotation = "clockwise"
 game_over = False
-top_card = Number_Card()
+top_card = NumberCard()
 
 # Deal Cards
 for player in players:
@@ -202,6 +209,8 @@ while not game_over:
 
     # Start Current Player's Turn
     current_player = players[players_index]
+    current_player.received_card = top_card
+    print("Current player's received_card: ", current_player.received_card)
     print("* It is now", current_player.name, "'s turn.")
 
     print("* Now showing top card: ")
@@ -218,7 +227,7 @@ while not game_over:
     # Check if current player receives a draw two, draw four, or skip card
     if current_player.received_card:
         if current_player.received_card.is_effect_card():
-            current_player.received_card.take_effect()
+            current_player.received_card.take_effect(current_player)
 
     # Check if player wants to play a card if not skipped
     if current_player.is_skipped is False:
@@ -242,9 +251,9 @@ while not game_over:
         game_over = True
 
     # Next Turn
-    if isinstance(top_card, Reverse_Card):
-
-
+    if isinstance(top_card, ReverseCard):
+        game_rotation = top_card.take_effect(game_rotation)
+        print("Reversed, now it's: ", game_rotation)
 
     if game_rotation == "clockwise":
         if current_player.is_last_player(players_index):
